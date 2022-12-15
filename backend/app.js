@@ -13,7 +13,7 @@ require('dotenv').config()
 mongoose.set('strictQuery', true);
 
 mongoose.connect(process.env.DB_ADDRESS,{ useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('Succefully connected to MongoDB !'))
+  .then(() => console.log('Successfully connected to MongoDB !'))
   .catch(() => console.log('Failed to connect to MongoDB !'));
 
 const app = express();
