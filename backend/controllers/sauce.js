@@ -28,15 +28,15 @@ exports.createSauce = (req, res, next) => {
 };
 
 exports.modifySauce = (req, res, next) => {
-  if(req.file) {
+  if (req.file) {
     Sauce.findOne({ _id: req.params.id })
-    .then((sauce) => {
-      const filename = sauce.imageUrl.split('/images/')[1];
-      console.log(filename);
-      fs.unlink(`images/${filename}`, (error) => {
-        if (error) throw error;
-      })
-    });
+      .then((sauce) => {
+        const filename = sauce.imageUrl.split('/images/')[1];
+        console.log(filename);
+        fs.unlink(`images/${filename}`, (error) => {
+          if (error) throw error;
+        })
+      });
   }
   const sauceObject = req.file ? {
     ...JSON.parse(req.body.sauce),
@@ -65,9 +65,9 @@ exports.likeDislike = (req, res, next) => {
     .then((sauce) => {
       console.log(sauce);
 
-      // If usersLiked array is empty and like === 1
-      if (!sauce.usersLiked.includes(req.body.userId) && req.body.like === 1) {
-        console.log("userId n'est pas dans usersLiked et requête front like = 1.");
+      // If usersLiked and usersDisliked arrays are empty and like === 1
+      if (!sauce.usersLiked.includes(req.body.userId) && !sauce.usersDisliked.includes(req.body.userId) && req.body.like === 1) {
+        console.log("userId is in usersLiked and like = 1.");
         // Update database
         Sauce.updateOne(
           { _id: req.params.id },
@@ -76,12 +76,12 @@ exports.likeDislike = (req, res, next) => {
             $push: { usersLiked: req.body.userId },
           }
         )
-          .then(() => res.status(201).json({ message: 'Sauce like +1' }))
+          .then(() => res.status(201).json({ message: 'Like added' }))
           .catch((error) => res.status(400).json({ error }));
       }
-      // usersLiked array is not empty and like === 0
-      else if (sauce.usersLiked.includes(req.body.userId) && req.body.like === 0) {
-        console.log("userId est dans usersLiked et requête front like = 0.");
+      // usersLiked array is not empty and usersDisliked array is empty and like === 0
+      else if (sauce.usersLiked.includes(req.body.userId) && !sauce.usersDisliked.includes(req.body.userId) && req.body.like === 0) {
+        console.log("userId is no longer in userLiked array and likes = 0.");
         Sauce.updateOne(
           { _id: req.params.id },
           {
@@ -89,12 +89,12 @@ exports.likeDislike = (req, res, next) => {
             $pull: { usersLiked: req.body.userId },
           }
         )
-          .then(() => res.status(201).json({ message: 'Sauce like 0' }))
+          .then(() => res.status(201).json({ message: 'Like deleted' }))
           .catch((error) => res.status(400).json({ error }));
       }
-      // userDisliked is empty and like === -1
-      else if (!sauce.usersDisliked.includes(req.body.userId) && req.body.like === -1) {
-        console.log("userId est dans usersDisliked et requête front dislike = -1.");
+      // userDisliked and userLiked arrays are empty and like === -1
+      else if (!sauce.usersDisliked.includes(req.body.userId) && !sauce.usersLiked.includes(req.body.userId) && req.body.like === -1) {
+        console.log("userId is in userDisliked array and like = -1");
         Sauce.updateOne(
           { _id: req.params.id },
           {
@@ -102,12 +102,12 @@ exports.likeDislike = (req, res, next) => {
             $push: { usersDisliked: req.body.userId },
           }
         )
-          .then(() => res.status(201).json({ message: "Sauce dislike 1" }))
+          .then(() => res.status(201).json({ message: "Dislike added" }))
           .catch((error) => res.status(400).json({ error }));
       }
-      // usersDisliked is not empty and like === 0
-      else if (sauce.usersDisliked.includes(req.body.userId) && req.body.like === 0) {
-        console.log("userId est dans usersDisliked et requête front like = 0.");
+      // usersDisliked array is not empty and userLiked array is empty and like === 0
+      else if (sauce.usersDisliked.includes(req.body.userId) && !sauce.usersLiked.includes(req.body.userId) && req.body.like === 0) {
+        console.log("userId is no longer in usersDisliked array and like = 0.");
         Sauce.updateOne(
           { _id: req.params.id },
           {
@@ -115,11 +115,40 @@ exports.likeDislike = (req, res, next) => {
             $pull: { usersDisliked: req.body.userId },
           }
         )
-          .then(() => res.status(201).json({ message: 'Sauce dislike 0' }))
+          .then(() => res.status(201).json({ message: 'Disliked deleted' }))
           .catch((error) => res.status(400).json({ error }));
       }
+      // userDisliked is not empty and likes === 1
+      else if (sauce.usersDisliked.includes(req.body.userId) && req.body.like === 1) {
+        console.log("userId is no longer in usersDisliked array but in userLiked array and like = 1.");
+        Sauce.updateOne(
+          { _id: req.params.id },
+          {
+            $inc: { dislikes: -1, likes: 1 },
+            $pull: { usersDisliked: req.body.userId },
+            $push: { usersLiked: req.body.userId },
+          }
+        )
+          .then(() => res.status(201).json({ message: 'Dislike deleted and Like added' }))
+          .catch((error) => res.status(400).json({ error }));
+      }
+      // userLiked is not empty and likes === -1
+      else if (sauce.usersLiked.includes(req.body.userId) && req.body.like === -1) {
+        console.log("userId is no longer in usersLiked array but in userDisliked array and like = -1.");
+        Sauce.updateOne(
+          { _id: req.params.id },
+          {
+            $inc: { likes: -1, dislikes: 1 },
+            $pull: { usersLiked: req.body.userId },
+            $push: { usersDisliked: req.body.userId },
+          }
+        )
+          .then(() => res.status(201).json({ message: 'Like deleted and Dislike added' }))
+          .catch((error) => res.status(400).json({ error }));
+      }
+
       else {
-        res.status(409).json({ error: "Opération interdite" })
+        res.status(409).json({ error: 'Forbidden operation' })
       }
     })
     .catch((error) => res.status(404).json({ error }));
