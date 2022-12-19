@@ -23,7 +23,7 @@ exports.createSauce = (req, res, next) => {
   });
   sauce
     .save()
-    .then(() => res.status(201).json({ message: 'Sauce enregistrée !' }))
+    .then(() => res.status(201).json({ message: 'Your sauce has been saved !' }))
     .catch((error) => res.status(400).json({ error }));
 };
 
@@ -43,7 +43,7 @@ exports.modifySauce = (req, res, next) => {
     imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
   } : { ...req.body };
   Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-    .then(() => res.status(200).json({ message: 'Sauce modifiée!' }))
+    .then(() => res.status(200).json({ message: 'Your sauce has been modified !' }))
     .catch((error) => res.status(401).json({ error }));
 };
 
@@ -53,7 +53,7 @@ exports.deleteSauce = (req, res, next) => {
       const filename = sauce.imageUrl.split('/images/')[1];
       fs.unlink(`images/${filename}`, () => {
         Sauce.deleteOne({ _id: req.params.id })
-          .then(() => res.status(200).json({ message: 'Sauce supprimée !' }))
+          .then(() => res.status(200).json({ message: 'Your sauce has been deleted !' }))
           .catch((error) => res.status(400).json({ error }));
       });
     })
@@ -146,7 +146,6 @@ exports.likeDislike = (req, res, next) => {
           .then(() => res.status(201).json({ message: 'Like deleted and Dislike added' }))
           .catch((error) => res.status(400).json({ error }));
       }
-
       else {
         res.status(409).json({ error: 'Forbidden operation' })
       }
