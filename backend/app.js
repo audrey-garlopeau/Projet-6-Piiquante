@@ -18,7 +18,7 @@ mongoose.connect(process.env.DB_ADDRESS,{ useNewUrlParser: true, useUnifiedTopol
 
 const app = express();
 
-// Prevents from CORS errors. Allow our two servers to communicate.
+// Prevents from CORS errors and allows our two servers to communicate.
 app.use(cors());
 
 // Allows to handle requests.
